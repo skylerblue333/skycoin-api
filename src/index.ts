@@ -87,3 +87,4 @@ export class ApiRouteCatalog {
 }
 
 export const LIMITS = { MAX_ROUTES, MAX_PATH, MAX_SUMMARY } as const;
+export * from './control-plane.js';
