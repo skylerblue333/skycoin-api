@@ -11,10 +11,18 @@ test('normalizes paths and returns deterministic route metadata', () => {
   assert.deepEqual(catalog.get('v1', 'GET', '/v1/health'), route);
 });
 
-test('identical registrations are idempotent while conflicting metadata fails', () => {
+test('identical normalized registrations are idempotent while conflicting metadata fails', () => {
   const catalog = new ApiRouteCatalog();
-  const descriptor = { method: 'POST' as const, path: '/v1/items', version: 'v1', summary: 'Create item', authRequired: true };
-  assert.equal(catalog.register(descriptor).key, catalog.register(descriptor).key);
+  const descriptor = { method: 'POST' as const, path: '/v1/items/', version: 'v1', summary: 'Create item', authRequired: true };
+  const first = catalog.register(descriptor);
+  const reordered = {
+    authRequired: true,
+    summary: 'Create item',
+    version: 'v1',
+    path: '/v1//items',
+    method: 'POST' as const,
+  };
+  assert.equal(first.key, catalog.register(reordered).key);
   assert.throws(
     () => catalog.register({ ...descriptor, summary: 'Different meaning' }),
     /route conflict/,
@@ -30,7 +38,7 @@ test('list ordering is locale-independent and version filtering is exact', () =>
   assert.deepEqual(catalog.list('v1').map((route) => route.path), ['/z', '/ä']);
 });
 
-test('rejects malformed route descriptions', () => {
+test('rejects malformed route descriptions including runtime boolean violations', () => {
   const catalog = new ApiRouteCatalog();
   assert.throws(
     () => catalog.register({ method: 'GET', path: 'v1/no-slash', version: 'v1', summary: 'Bad', authRequired: false }),
@@ -43,6 +51,10 @@ test('rejects malformed route descriptions', () => {
   assert.throws(
     () => catalog.register({ method: 'GET', path: '/x', version: 'bad version', summary: 'Bad', authRequired: false }),
     /version/,
+  );
+  assert.throws(
+    () => catalog.register({ method: 'GET', path: '/x', version: 'v1', summary: 'Bad auth', authRequired: 'false' as unknown as boolean }),
+    /authRequired must be boolean/,
   );
 });
 
