@@ -1,44 +1,57 @@
-<!-- PORTFOLIO PROJECT PROFILE: maintained by the repository owner -->
+# Sky API Route Catalog
 
-## Project profile and code-audit snapshot
+Sky API Route Catalog is a small dependency-free TypeScript library for registering and validating **HTTP route metadata**. It is a catalog/control-plane primitive, not an HTTP server.
 
-**What this is:** **skycoin-api** is a public repository described as: “API Management - Documentation, key management #SkyCoin4444 #AI #Blockchain #DevOps #Innovation” Its dominant language signals are **TypeScript (8 files)**.
+## Status
 
-**Why it has value:** Its value is best understood through the implementation evidence currently present in the repository: **27 tracked files** were observed in the shallow audit, with the source structure and existing documentation providing the project’s specific context. This README does not treat a prototype, experiment, or archive as a production system without supporting evidence.
+**Engineering beta.** The catalog validates method, normalized path, version, summary, and authentication-required metadata; rejects conflicting registrations; bounds the registry to 2,000 routes; and returns deterministic lists.
 
-**Implementation evidence:** No test-related file was detected by filename heuristics.; 1 dependency or package manifest(s) detected; 3 build/CI/infrastructure signal(s) detected; and 3 documentation or governance file(s) detected. Test filenames observed include none detected. Dependency or package files include `package.json`. Build, CI, or infrastructure signals include `Dockerfile`, `docker-compose.yml`, `.github/workflows/ci.yml`.
+The historical repository did not contain an API implementation under `src`; it contained copied AI/security scaffolding and placeholder build/test scripts. Those unrelated surfaces are removed from the active product branch.
 
-**Current status:** The repository is tracked on the `main` branch. The existing source tree, configuration, tests, workflows, and documentation remain authoritative for supported behavior and maturity. A code audit is not a production-readiness certification, and the presence of a test or workflow file does not establish that all checks pass.
+## Supported behavior
 
-**Relationship to the wider portfolio:** This repository is one focused component of the broader Skyler Blue Spillers portfolio across AI, software engineering, cloud and DevOps, cybersecurity, blockchain, finance, education, social systems, and creative work. It may provide a service boundary, implementation pattern, experiment, archive, or reusable idea for related repositories. Treat repositories as technical dependencies only where documented interfaces and verified project requirements support that relationship.
+- HTTP methods: GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD;
+- normalized absolute paths with duplicate/trailing slash cleanup;
+- explicit version identifiers;
+- bounded human-readable summaries;
+- `authRequired` metadata;
+- idempotent identical registrations;
+- conflict detection for the same version/method/path key;
+- exact version filtering and deterministic code-unit ordering;
+- defensive copies of registered route records.
 
-**Quality and security note:** No obvious secret-like pattern was detected by the limited static scan; this is not a substitute for a security audit. No TODO/FIXME marker was detected in the scanned text files.
+## Example
 
----
+```ts
+import { ApiRouteCatalog } from './src';
 
-# Skycoin Api
+const catalog = new ApiRouteCatalog();
+catalog.register({
+  method: 'GET',
+  path: '/v1/health',
+  version: 'v1',
+  summary: 'Service health',
+  authRequired: false,
+});
+```
 
-![GitHub stars](https://img.shields.io/github/stars/skylerblue333/skycoin-api?style=flat-square)
-![GitHub license](https://img.shields.io/github/license/skylerblue333/skycoin-api?style=flat-square)
+## Verify
 
-## 🌟 Overview
-**skycoin-api** is a professional-grade project within the **SkyCoin4444** ecosystem. It focuses on delivering high-value solutions in the domain of **TypeScript**.
+```bash
+npm install
+npm run build
+npm test
+npm audit --omit=dev --audit-level=high
+```
 
-## 🚀 Key Features
-- **Scalable Architecture**: Designed for enterprise-level growth and performance.
-- **Modern Standards**: Implements best practices for clean code and maintainability.
-- **Robust Integration**: Built to work seamlessly within modern cloud-native environments.
+## Boundaries
 
-## 🛠️ Technology Stack
-- **Primary Domain**: TypeScript
-- **Ecosystem**: SkyCoin4444 Digital Platform
+This library does not create sockets, execute handlers, proxy traffic, authenticate callers, validate request/response schemas, generate OpenAPI documents, persist route metadata, enforce rate limits, provide service discovery, or claim a deployed SKYCOIN4444 API. A real service may consume this catalog as metadata or documentation input.
 
-## 📂 Structure
-The project is organized into a modular structure to ensure clarity and ease of development.
+## SKYCOIN4444 integration
 
-## 👨‍💻 Author
-**Skyler Blue Spillers**
-*Professional Chess Player & Software Engineer*
+Gateway and service repositories can register their supported route descriptors through a common deterministic catalog without pretending that route metadata itself is a running API platform.
 
----
-*Powered by SkyCoin4444*
+## License
+
+See `LICENSE`.
