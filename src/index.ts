@@ -16,6 +16,7 @@ const MAX_ROUTES = 2_000;
 const MAX_PATH = 512;
 const MAX_SUMMARY = 512;
 const VERSION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+const HTTP_METHODS: readonly HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
 
 function normalizePath(path: string): string {
   const trimmed = path.trim();
@@ -33,10 +34,17 @@ function validateDescriptor(descriptor: RouteDescriptor): RouteRecord {
   if (!VERSION_PATTERN.test(version)) throw new TypeError('version must be 1-64 URL-safe identifier characters');
   if (!summary || summary.length > MAX_SUMMARY) throw new TypeError(`summary must be 1-${MAX_SUMMARY} characters`);
   const method = descriptor.method.toUpperCase() as HttpMethod;
-  if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'].includes(method)) {
-    throw new TypeError('unsupported HTTP method');
-  }
-  return { ...descriptor, method, path, version, summary, key: `${version}:${method}:${path}` };
+  if (!HTTP_METHODS.includes(method)) throw new TypeError('unsupported HTTP method');
+  if (typeof descriptor.authRequired !== 'boolean') throw new TypeError('authRequired must be boolean');
+  return { method, path, version, summary, authRequired: descriptor.authRequired, key: `${version}:${method}:${path}` };
+}
+
+function sameRouteMetadata(left: RouteRecord, right: RouteRecord): boolean {
+  return left.method === right.method
+    && left.path === right.path
+    && left.version === right.version
+    && left.summary === right.summary
+    && left.authRequired === right.authRequired;
 }
 
 /** Metadata-only catalog. It does not create an HTTP listener or execute handlers. */
@@ -47,7 +55,7 @@ export class ApiRouteCatalog {
     const route = validateDescriptor(descriptor);
     const existing = this.routes.get(route.key);
     if (existing) {
-      if (JSON.stringify(existing) === JSON.stringify(route)) return { ...existing };
+      if (sameRouteMetadata(existing, route)) return { ...existing };
       throw new Error(`route conflict for ${route.key}`);
     }
     if (this.routes.size >= MAX_ROUTES) throw new RangeError('route catalog capacity reached');
